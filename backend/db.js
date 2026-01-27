@@ -1,25 +1,24 @@
 const {Pool} = require('pg')
 const pool = new Pool ({
-    user: ,
-    password: ,
-    hots: ,
-    port: ,
-    database: 
+    user: 'postgres',
+    password: '',
+    hosts: "localhost",
+    port: 3000,
+    database: 'applicationtracker' 
 });
 
 async function addData(userId, companyName, dateApplied, statuses, incomingPhone, incomingInterview, notes) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'INSERT INTO ApplicationTracker (CompanyName, DateApplied, Statuses, IncomingPhone, IncomingInterview, Notes) Values (?,?,?,?,?,?) Where UserId = ?',
+        const result = await pool.query(
+            'INSERT INTO ApplicationTracker (company_name, date_applied, statuses, income_phone, incoming_interview, notes) Values (?,?,?,?,?,?) Where user_id = ?',
             [companyName, dateApplied, statuses, incomingPhone, incomingInterview, notes, userId]
         );
         return result;
     } catch (error) {
         console.log(error);
     } finally {
-        if(conPool) {
-        conPool.release();
+        if(pool) {
+        pool.release();
         }
     }
 
@@ -27,131 +26,81 @@ async function addData(userId, companyName, dateApplied, statuses, incomingPhone
 
 async function getData(userId) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'SELECT * FROM ApplicationTracker Where UserId = ?'
+        const result = await pool.query(
+            'SELECT * FROM ApplicationTracker Where user_id = ?'
             [userId]
         );
         return result;
     } catch (error) {
-        
-    } finally {
-        if(conPool) {
-            conPool,release();
-        }
+        console.log(error);
     }
 }
 
 async function getCountReplies(userId) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'SELECT Count(*) From ApplicationTracker WHERE UserId = ? AND Statuses = "rejected" or Statuses = "ongoing" or Statuses = "offer"'
+        const result = await pool.query(
+            'SELECT Count(*) From ApplicationTracker WHERE user_id = ? AND statuses = "rejected" or statuses = "ongoing" or statuses = "offer"'
             [userId]
         );
         return result;
     } catch (error) {
-        
+        console.log(error);
     }finally {
-        if(conPool) {
-            conPool.release();
+        if(pool) {
+            pool.release();
         }
     }
 }
 async function getCountRows(userId) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'SELECT Count(*) From ApplicationTracker Where UserId = ?'
+        const result = await pool.query(
+            'SELECT Count(*) From ApplicationTracker Where user_id = ?'
             [userId]
         );
         return result;
     } catch (error) {
-        
+        console.log(error);
     }finally {
-        if(conPool) {
-            conPool.release();
+        if(pool) {
+            pool.release();
         }
     }
 }
 async function getRejections(userId) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'SELECT Count(*) From ApplicationTracker Where UserId = ? AND Statuses = "rejected"'
+        const result = await pool.query(
+            'SELECT Count(*) From ApplicationTracker Where user_id = ? AND statuses = "rejected"'
             [userId]
         );
         return result;
     } catch (error) {
-        
+        console.log(error);
     }finally {
-        if(conPool) {
-            conPool.release();
-        }
-    }
-}
-async function getIncomingPhone(userId) {
-    try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'SELECT UserId, IncomingPhone From ApplicationTracker Where UserId = ?'
-            [userId]
-        );
-        return result;
-    } catch (error) {
-        
-    }finally {
-        if(conPool) {
-            conPool.release();
-        }
-    }
-}
-async function getIncomingInterview(userId) {
-    try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'SELECT UserId, IncomingInterview From Applicationtracker Where UserId = ?'
-            [userId]
-        );
-        return result;
-    } catch (error) {
-        
-    } finally {
-        if(conPool) {
-            conPool.release();
+        if(pool) {
+            pool.release();
         }
     }
 }
 async function updateData(userId, id, companyName, dateApplied, statuses, incomingPhone, incomingInterview, notes) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'Update ApplicationTracker SET CompanyName = ?, DateApplied = ?, Statuses = ?, IncomingPhone = ?, IncomingInterview = ?, Notes = ? Where UserId = ? AND ApplicationId = ?'
+        const result = await pool.query(
+            'Update ApplicationTracker SET company_name = ?, date_applied = ?, statuses = ?, incoming_phone = ?, incoming_interview = ?, notes = ? Where user_id = ? AND application_id = ?'
             [companyName, dateApplied, statuses, incomingPhone, incomingInterview, notes, userId, id]
         );
         return result;
     } catch (error) {
-        
-    } finally {
-        if(conPool) {
-            conPool.release();
-        }
+        console.log(error);
     }
 }
 async function deleteData(userId, id) {
     try {
-        let conPool = await pool.getConnection();
-        const [result] = await conPool.execute(
-            'Delete FROM ApplicationTracker Where UserId = ? AND ApplicationId = ?'
+        const result = await pool.query(
+            'Delete FROM ApplicationTracker Where user_id = ? AND application_id = ?'
             [userId, id]
         );
         return result;
     } catch (error) {
-        
-    } finally {
-        if(conPool) {
-            conPool.release();
-        }
+        console.log(error);
     }
 }
 
@@ -163,8 +112,6 @@ module.exports = {
     getCountReplies,
     getCountRows,
     getRejections,
-    getIncomingPhone,
-    getIncomingInterview,
     updateData,
     deleteData,
 }
