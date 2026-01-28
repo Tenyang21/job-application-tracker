@@ -12,6 +12,6 @@ CREATE TABLE ApplicationTracker (
     statuses VARCHAR(50) NOT NULL,
     incoming_phone DATE, 
     incoming_interview DATE,
-    notes VARCHAR(250) NOT NULL,
+    notes VARCHAR(250),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
