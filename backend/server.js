@@ -38,13 +38,13 @@ app.get("/api/home", async (req, res) => {
 app.post("/api/edit", async (req, res) => {
   try {
     const {
-      company_name,   //must match the property name for destruc.
+      company_name, //must match the property name for destruc.
       date_applied,
       statuses,
       incoming_phone,
       incoming_interview,
       notes,
-    } = req.body;    
+    } = req.body;
     const userId = 1;
     const data = await dataa.addData(
       userId,

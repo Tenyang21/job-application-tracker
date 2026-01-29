@@ -3,7 +3,7 @@ const { Pool } = require("pg");
 const pool = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
 });
@@ -15,7 +15,7 @@ async function addData(
   statuses,
   incomingPhone,
   incomingInterview,
-  notes
+  notes,
 ) {
   try {
     const result = await pool.query(
@@ -27,60 +27,61 @@ async function addData(
         statuses,
         incomingPhone,
         incomingInterview,
-        notes
-      ]
+        notes,
+      ],
     );
     // "Returning *" returns the newly created row with all columns.
     return result.rows[0]; //gets the first row
   } catch (error) {
     console.log(error);
-  } 
+  }
 }
 
 async function getData(userId) {
   try {
     const result = await pool.query(
-      "SELECT * FROM ApplicationTracker Where user_id = ?" [userId],
+      "SELECT * FROM ApplicationTracker Where user_id = $1",
+      [userId],
     );
     return result.rows;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 
 async function getCountReplies(userId) {
   try {
     const result = await pool.query(
-      'SELECT Count(*) From ApplicationTracker WHERE user_id = ? AND statuses = "rejected" or statuses = "ongoing" or statuses = "offer"'[
-        userId
-      ],
+      "SELECT Count(*) From ApplicationTracker WHERE user_id = $1 AND (statuses = $2 OR statuses = $3 OR statuses = $4)",
+      [userId, "rejected", "ongoin", "offer"],
     );
     return result.rows[0];
   } catch (error) {
     console.log(error);
-  } 
+  }
 }
 async function getCountRows(userId) {
   try {
     const result = await pool.query(
-      "SELECT Count(*) From ApplicationTracker Where user_id = ?"[userId],
+      "SELECT Count(*) From ApplicationTracker Where user_id = $1",
+      [userId],
     );
     return result.rows[0];
   } catch (error) {
     console.log(error);
-  } 
+  }
 }
 async function getRejections(userId) {
   try {
     const result = await pool.query(
-      'SELECT Count(*) From ApplicationTracker Where user_id = ? AND statuses = "rejected"'[
-        userId
-      ],
+      "SELECT Count(*) From ApplicationTracker Where user_id = $1 AND (statuses = $2)",
+      [userId, "rejected"],
     );
     return result.rows[0];
   } catch (error) {
     console.log(error);
-  } 
+  }
 }
 async function updateData(
   userId,
@@ -94,7 +95,7 @@ async function updateData(
 ) {
   try {
     const result = await pool.query(
-      "Update ApplicationTracker SET company_name = ?, date_applied = ?, statuses = ?, incoming_phone = ?, incoming_interview = ?, notes = ? Where user_id = ? AND application_id = ?"
+      "Update ApplicationTracker SET company_name = $1, date_applied = $2, statuses = $3, incoming_phone = $4, incoming_interview = $5, notes = $5 Where user_id = $6 AND application_id = $7",
       [
         companyName,
         dateApplied,
@@ -103,7 +104,7 @@ async function updateData(
         incomingInterview,
         notes,
         userId,
-        id
+        id,
       ],
     );
     return result.rows;
@@ -114,9 +115,8 @@ async function updateData(
 async function deleteData(userId, id) {
   try {
     const result = await pool.query(
-      "Delete FROM ApplicationTracker Where user_id = ? AND application_id = ?"[
-        userId, id
-      ],
+      "Delete FROM ApplicationTracker Where user_id = $1 AND application_id = $2",
+      [userId, id],
     );
     return result.rows;
   } catch (error) {
