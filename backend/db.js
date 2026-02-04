@@ -54,7 +54,7 @@ async function getCountReplies(userId) {
   try {
     const result = await pool.query(
       "SELECT Count(*) From ApplicationTracker WHERE user_id = $1 AND (statuses = $2 OR statuses = $3 OR statuses = $4)",
-      [userId, "rejected", "ongoin", "offer"],
+      [userId, "rejected", "ongoing", "offer"],
     );
     return result.rows[0];
   } catch (error) {
@@ -95,7 +95,7 @@ async function updateData(
 ) {
   try {
     const result = await pool.query(
-      "Update ApplicationTracker SET company_name = $1, date_applied = $2, statuses = $3, incoming_phone = $4, incoming_interview = $5, notes = $5 Where user_id = $6 AND application_id = $7",
+      "Update ApplicationTracker SET company_name = $1, date_applied = $2, statuses = $3, incoming_phone = $4, incoming_interview = $5, notes = $6 Where user_id = $7 AND application_id = $8",
       [
         companyName,
         dateApplied,
@@ -115,10 +115,20 @@ async function updateData(
 async function deleteData(userId, id) {
   try {
     const result = await pool.query(
-      "Delete FROM ApplicationTracker Where user_id = $1 AND application_id = $2",
+      "Delete FROM ApplicationTracker Where user_id = $1 AND application_id = $2 RETURNING *",
       [userId, id],
     );
     return result.rows;
+  } catch (error) {
+    console.log(error);
+  }
+}
+async function upcomingEvents(userId) {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM ApplicationTracker WHERE user_id = $1 ORDER BY incoming_phone ASC, incoming_interview ASC",
+      [userId],
+    );
   } catch (error) {
     console.log(error);
   }
@@ -132,4 +142,5 @@ module.exports = {
   getRejections,
   updateData,
   deleteData,
+  upcomingEvents,
 };

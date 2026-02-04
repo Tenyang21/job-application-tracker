@@ -26,10 +26,40 @@ app.get("/api/home", async (req, res) => {
       percentageReply: percentage,
       applicationsApplied: rows,
       rejections: rejections,
-      comapany: companies,
+      company: companies,
       incomingPhone: incomingPhone,
       incomingInterview: incomingInterview,
     });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.get("api/home/sort", async (req, res) => {
+  try {
+    const userId = 1;
+    let events = [];
+    const applications = await dataa.upcomingEvents(userId);
+    applications.forEach((a) => {
+      if (a.incomingPhone && a.incomingPhone >= Date.now()) {
+        events.push({
+          type: "phone",
+          company: a.company_name,
+          date: a.incomingPhone,
+        });
+      }
+    });
+    applications.forEach((a) => {
+      if (a.incomingInterview && a.incomingInterview >= Date.now()) {
+        events.push({
+          type: "interview",
+          company: a.company_name,
+          date: a.incomingInterview,
+        });
+      }
+    });
+    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+    res.json({ upcomingEvents: events });
   } catch (error) {
     console.log(error);
   }
@@ -64,7 +94,7 @@ app.post("/api/edit", async (req, res) => {
   }
 });
 
-app.put("/api/update/applicationId", async (req, res) => {
+app.patch("/api/update/:applicationId", async (req, res) => {
   try {
     const id = req.params.applicationId;
     const {
@@ -94,9 +124,9 @@ app.put("/api/update/applicationId", async (req, res) => {
   }
 });
 
-app.delete("api/delete/applicationId", async (req, res) => {
+app.delete("/api/delete/:applicationId", async (req, res) => {
   try {
-    const id = req.params.applicationId;
+    const id = parseInt(req.params.applicationId);
     const userId = 1;
     await dataa.deleteData(userId, id);
     res.json({
