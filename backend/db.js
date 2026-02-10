@@ -126,11 +126,13 @@ async function deleteData(userId, id) {
 async function upcomingEvents(userId) {
   try {
     const result = await pool.query(
-      "SELECT * FROM ApplicationTracker WHERE user_id = $1 ORDER BY incoming_phone ASC, incoming_interview ASC",
+      "SELECT * FROM ApplicationTracker WHERE user_id = $1 AND (incoming_phone >= CURRENT_DATE OR incoming_interview >= CURRENT_DATE)",
       [userId],
     );
+    return result.rows;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 
