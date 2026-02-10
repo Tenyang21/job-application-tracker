@@ -4,10 +4,6 @@ const port = 3000;
 const dataa = require("./db");
 app.use(express.json());
 
-app.get("/test", (req, res) => {
-  res.send("TEST WORKS");
-});
-
 app.get("/api/home", async (req, res) => {
   try {
     //userId comes from authentication
@@ -44,10 +40,12 @@ app.get("/api/sort", async (req, res) => {
     const userId = 1;
     let events = [];
     const applications = await dataa.upcomingEvents(userId);
-    console.log("applications", applications);
-    console.log(Array.isArray(applications));
     applications.forEach((a) => {
-      if (a.incoming_phone && a.incoming_phone >= Date.now()) {
+      if (
+        a.incoming_phone &&
+        a.incoming_phone >= Date.now() &&
+        a.statuses != "rejected"
+      ) {
         events.push({
           type: "phone",
           company: a.company_name,
@@ -56,7 +54,11 @@ app.get("/api/sort", async (req, res) => {
       }
     });
     applications.forEach((a) => {
-      if (a.incoming_interview && a.incoming_interview >= Date.now()) {
+      if (
+        a.incoming_interview &&
+        a.incoming_interview >= Date.now() &&
+        a.statuses != "rejected"
+      ) {
         events.push({
           type: "interview",
           company: a.company_name,
