@@ -135,6 +135,29 @@ async function upcomingEvents(userId) {
     throw error;
   }
 }
+async function signup(email, hash) {
+  try {
+    const result = await pool.query(
+      "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
+      [email, hash],
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+async function getUserData() {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM users",
+    );
+    return result.rows;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
 
 module.exports = {
   addData,
@@ -145,4 +168,6 @@ module.exports = {
   updateData,
   deleteData,
   upcomingEvents,
+  signup,
+  getUserData,
 };
