@@ -4,6 +4,9 @@ const port = 3000;
 const dataa = require("./db");
 app.use(express.json());
 
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
 app.get("/api/home", async (req, res) => {
   try {
     //userId comes from authentication
@@ -143,6 +146,49 @@ app.delete("/api/delete/:applicationId", async (req, res) => {
   } catch (error) {
     console.log(error);
   }
+});
+
+app.post("/api/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (email == null || password == null) {
+      return res.status(400).json({
+        message: "missing or invalid input",
+      });
+    }
+    const hash = bcrypt.hash(password, saltRounds);
+    const userData = await dataa.getUserData();
+    const emails = userData.map((a) => {
+      //array of emails from db
+      a.email;
+    });
+    if (emails && email.length > 0) {
+      emails.forEach((e) => {
+        if (e == email) {
+          return res.status(409).json({
+            message: "email already exists",
+          });
+        }
+      });
+    }
+    const data = await dataa.signup(email, hash);
+    if (data) {
+      return res.status(201).json({
+        message: "Registered",
+      });
+    } else {
+      return res.status(500).json({
+        message: "db connection fail",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.post("/api/login", async (req, res) => {
+  try {
+  } catch (error) {}
 });
 
 app.listen(port, () => {
