@@ -7,10 +7,12 @@ app.use(express.json());
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
-app.get("/api/home", async (req, res) => {
+const jwt = require("jsonwebtoken");
+
+app.get("/api/home", authenticate, async (req, res) => {
   try {
     //userId comes from authentication
-    const userId = 1;
+    const userId = req.userId;
     const data = await dataa.getData(userId);
     const companies = data.map((a) => a.company_name); //returns array of name of companies
     const incomingPhone = data.map((a) => a.incoming_phone);
@@ -38,9 +40,9 @@ app.get("/api/home", async (req, res) => {
   }
 });
 
-app.get("/api/sort", async (req, res) => {
+app.get("/api/sort", authenticate, async (req, res) => {
   try {
-    const userId = 1;
+    const userId = req.userId;
     let events = [];
     const applications = await dataa.upcomingEvents(userId);
     applications.forEach((a) => {
@@ -76,7 +78,7 @@ app.get("/api/sort", async (req, res) => {
   }
 });
 
-app.post("/api/edit", async (req, res) => {
+app.post("/api/edit", authenticate, async (req, res) => {
   try {
     const {
       company_name, //must match the property name for destruc.
@@ -86,7 +88,7 @@ app.post("/api/edit", async (req, res) => {
       incoming_interview,
       notes,
     } = req.body;
-    const userId = 1;
+    const userId = req.userId;
     const data = await dataa.addData(
       userId,
       company_name,
@@ -97,7 +99,7 @@ app.post("/api/edit", async (req, res) => {
       notes,
     );
     res.json({
-      message: "Application created successfully",
+      success: "Application created successfully",
       data: data, //must send it to client since id is needed for other methods
     });
   } catch (error) {
@@ -105,7 +107,7 @@ app.post("/api/edit", async (req, res) => {
   }
 });
 
-app.patch("/api/update/:applicationId", async (req, res) => {
+app.patch("/api/update/:applicationId", authenticate, async (req, res) => {
   try {
     const id = req.params.applicationId;
     const {
@@ -116,7 +118,7 @@ app.patch("/api/update/:applicationId", async (req, res) => {
       incoming_interview,
       notes,
     } = req.body;
-    const userId = 1;
+    const userId = req.userId;
     await dataa.updateData(
       userId,
       id,
@@ -128,20 +130,20 @@ app.patch("/api/update/:applicationId", async (req, res) => {
       notes,
     );
     res.json({
-      message: "Application updated successfully",
+      success: "Application updated successfully",
     });
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error: "Failed to update application" });
   }
 });
 
-app.delete("/api/delete/:applicationId", async (req, res) => {
+app.delete("/api/delete/:applicationId", authenticate, async (req, res) => {
   try {
     const id = parseInt(req.params.applicationId);
-    const userId = 1;
+    const userId = req.userId;
     await dataa.deleteData(userId, id);
     res.json({
-      message: "Application deleted successfully",
+      success: "Application deleted successfully",
     });
   } catch (error) {
     console.log(error);
@@ -153,32 +155,26 @@ app.post("/api/register", async (req, res) => {
     const { email, password } = req.body;
     if (email == null || password == null) {
       return res.status(400).json({
-        message: "missing or invalid input",
+        error: "missing or invalid input",
       });
     }
-    const hash = bcrypt.hash(password, saltRounds);
-    const userData = await dataa.getUserData();
-    const emails = userData.map((a) => {
-      //array of emails from db
-      a.email;
-    });
-    if (emails && email.length > 0) {
-      emails.forEach((e) => {
-        if (e == email) {
-          return res.status(409).json({
-            message: "email already exists",
-          });
-        }
-      });
-    }
-    const data = await dataa.signup(email, hash);
-    if (data) {
-      return res.status(201).json({
-        message: "Registered",
-      });
+    const userData = await dataa.getUserByEmail(email);
+    if (!userData) {
+      //user isn't registered yet
+      const hash = await bcrypt.hash(password, saltRounds);
+      const data = await dataa.signup(email, hash);
+      if (data) {
+        return res.status(201).json({
+          success: "Registered",
+        });
+      } else {
+        return res.status(500).json({
+          error: "db connection fail",
+        });
+      }
     } else {
-      return res.status(500).json({
-        message: "db connection fail",
+      return res.status(409).json({
+        error: "email already exists",
       });
     }
   } catch (error) {
@@ -188,8 +184,45 @@ app.post("/api/register", async (req, res) => {
 
 app.post("/api/login", async (req, res) => {
   try {
-  } catch (error) {}
+    const { email, password } = req.body;
+    const userData = await dataa.getUserByEmail(email); //this is much better than getting datas from all the users
+    if (!userData) {
+      return res.status(400).json({
+        error: "Invalid email or password",
+      });
+    }
+    const match = await bcrypt.compare(password, userData.password); //check if the password matches
+    if (match) {
+      const accessToken = jwt.sign(
+        { id: userData.user_id },
+        process.env.ACCESS_TOKEN_SECRET,
+      ); //payload
+      res.status(200).json({
+        accessToken: accessToken,
+        message: "login successfull",
+      });
+    } else {
+      res.status(400).json({
+        error: "Invalid email or password",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
 });
+
+function authenticate(req, res, next) {
+  try {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+    if (token == null) return res.sendStatus(401);
+    const user = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.userId = user.id;
+    next();
+  } catch (error) {
+    return res.sendStatus(403);
+  }
+}
 
 app.listen(port, () => {
   console.log(`Sever running at http://localhost:${port}`);

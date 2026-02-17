@@ -4,7 +4,7 @@ CREATE TABLE users (
     password VARCHAR(250) NOT NULL
 );
 
-CREATE TABLE ApplicationTracker (
+CREATE TABLE applicationtracker (
     user_id INT NOT NULL,
     application_id SERIAL PRIMARY KEY, 
     company_name VARCHAR(50) NOT NULL, 
