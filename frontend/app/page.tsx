@@ -106,7 +106,6 @@ export default function DashboardPage() {
     setDeleteLoading(true)
     try {
       await apiDeleteApplication(deleteId)
-      toast.success("Application deleted")
       mutateHome()
       mutateEvents()
       setDeleteId(null)
@@ -122,10 +121,8 @@ export default function DashboardPage() {
       try {
         if (editingApp) {
           await apiUpdateApplication(editingApp._id, data)
-          toast.success("Application updated")
         } else {
           await apiAddApplication(data)
-          toast.success("Application added")
         }
         mutateHome()
         mutateEvents()
@@ -157,19 +154,20 @@ export default function DashboardPage() {
     <div className="min-h-svh bg-background">
       <DashboardHeader onAddClick={handleAdd} onLogout={handleLogout} />
 
+      {/* Sticky title + stats */}
+      <div className="sticky top-[57px] z-30 bg-background border-b border-border">
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-4 lg:px-8">
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            Track and manage all your job applications in one place.
+          </p>
+          <StatsCards stats={stats} />
+        </div>
+      </div>
+
+      {/* Scrollable content */}
       <main className="mx-auto w-full max-w-[1600px] px-4 py-6 lg:px-8">
         <div className="flex flex-col gap-6">
-          {/* Page title */}
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground">
-              Track and manage all your job applications in one place.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <StatsCards stats={stats} />
-
           {/* Two-column layout: Applications + Upcoming Events sidebar */}
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_320px]">
             {/* Applications section */}
