@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const port = 3000;
+const port = 5000;
 const dataa = require("./db");
 app.use(express.json());
 
@@ -9,32 +9,34 @@ const saltRounds = 10;
 
 const jwt = require("jsonwebtoken");
 
+const cors = require("cors");
+app.use(cors({ origin: "http://localhost:3000" }));
+
 app.get("/api/home", authenticate, async (req, res) => {
   try {
     //userId comes from authentication
     const userId = req.userId;
     const data = await dataa.getData(userId);
-    const companies = data.map((a) => a.company_name); //returns array of name of companies
-    const incomingPhone = data.map((a) => a.incoming_phone);
-    const incomingInterview = data.map((a) => a.incoming_interview);
-    //getting the percentage of replies
     const replies = await dataa.getCountReplies(userId);
-    //number of application applied
     const rows = await dataa.getCountRows(userId);
-    let percentage = 0;
-    if (replies > 0) {
-      percentage = (replies / rows) * 100;
-    }
-    const rejections = await dataa.getRejections(userId);
+    const rejects = await dataa.getRejections(userId);
 
+    const replyRate = parseInt(replies.count); //.count gets the value from the object
+    const totalApplications = parseInt(rows.count);
+    const rejections = parseInt(rejects.count);
+
+    let percentage = 0;
+    if (replyRate > 0) {
+      percentage = Math.trunc((replyRate / totalApplications) * 100);
+    }
     res.json({
-      percentageReply: percentage,
-      applicationsApplied: rows,
-      rejections: rejections,
-      company: companies,
-      incomingPhone: incomingPhone,
-      incomingInterview: incomingInterview,
-    });
+      stats: {
+        totalApplications: totalApplications,
+        replyRate: percentage,
+        rejections: rejections,
+      },
+      applications: data.map((a) => ({ ...a, _id: a.application_id })), //match it with frontend
+    }); //due to frontend design
   } catch (error) {
     console.log(error);
   }
@@ -48,31 +50,33 @@ app.get("/api/sort", authenticate, async (req, res) => {
     applications.forEach((a) => {
       if (
         a.incoming_phone &&
-        a.incoming_phone >= Date.now() &&
+        new Date(a.incoming_phone) >= Date.now() &&
         a.statuses != "rejected"
       ) {
         events.push({
           type: "phone",
-          company: a.company_name,
+          company_name: a.company_name,
           date: a.incoming_phone,
+          application_id: a.application_id,
         });
       }
     });
     applications.forEach((a) => {
       if (
         a.incoming_interview &&
-        a.incoming_interview >= Date.now() &&
+        new Date(a.incoming_phone) >= Date.now() &&
         a.statuses != "rejected"
       ) {
         events.push({
           type: "interview",
-          company: a.company_name,
+          company_name: a.company_name,
           date: a.incoming_interview,
+          application_id: a.application_id,
         });
       }
     });
     events.sort((a, b) => new Date(a.date) - new Date(b.date));
-    res.json({ upcomingEvents: events });
+    res.json(events);
   } catch (error) {
     console.log(error);
   }
@@ -87,6 +91,7 @@ app.post("/api/edit", authenticate, async (req, res) => {
       incoming_phone,
       incoming_interview,
       notes,
+      position,
     } = req.body;
     const userId = req.userId;
     const data = await dataa.addData(
@@ -94,9 +99,10 @@ app.post("/api/edit", authenticate, async (req, res) => {
       company_name,
       date_applied,
       statuses,
-      incoming_phone,
-      incoming_interview,
+      incoming_phone || null,
+      incoming_interview || null,
       notes,
+      position,
     );
     res.json({
       success: "Application created successfully",
@@ -117,6 +123,7 @@ app.patch("/api/update/:applicationId", authenticate, async (req, res) => {
       incoming_phone,
       incoming_interview,
       notes,
+      position,
     } = req.body;
     const userId = req.userId;
     await dataa.updateData(
@@ -125,9 +132,10 @@ app.patch("/api/update/:applicationId", authenticate, async (req, res) => {
       company_name,
       date_applied,
       statuses,
-      incoming_phone,
-      incoming_interview,
+      incoming_phone || null,
+      incoming_interview || null,
       notes,
+      position,
     );
     res.json({
       success: "Application updated successfully",
