@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { format } from "date-fns"
-import { Edit2, Trash2 } from "lucide-react"
+import { format } from "date-fns";
+import { Edit2, Trash2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,47 +12,62 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import type { Application, ApplicationStatus } from "@/lib/types"
+} from "@/components/ui/tooltip";
+import type { Application, ApplicationStatus } from "@/lib/types";
 
 interface ApplicationsTableProps {
-  applications: Application[]
-  onEdit: (app: Application) => void
-  onDelete: (id: string) => void
+  applications: Application[];
+  onEdit: (app: Application) => void;
+  onDelete: (id: string) => void;
 }
 
-const statusConfig: Record<ApplicationStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const statusConfig: Record<
+  ApplicationStatus,
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
+> = {
   applied: { label: "Applied", variant: "secondary" },
   phone_screen: { label: "Phone Screen", variant: "outline" },
   interviewing: { label: "Interviewing", variant: "default" },
   offer: { label: "Offer", variant: "default" },
   rejected: { label: "Rejected", variant: "destructive" },
-  withdrawn: { label: "Withdrawn", variant: "secondary" },
-}
+};
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "-"
+  if (!dateStr) return "-";
   try {
-    return format(new Date(dateStr), "MMM d, yyyy")
+    // take only the date part before T
+    const datePart = dateStr.split("T")[0];
+    return format(new Date(datePart + "T00:00:00"), "MMM d, yyyy");
   } catch {
-    return dateStr
+    return dateStr;
   }
 }
 
-export function ApplicationsTable({ applications, onEdit, onDelete }: ApplicationsTableProps) {
+export function ApplicationsTable({
+  applications,
+  onEdit,
+  onDelete,
+}: ApplicationsTableProps) {
   if (applications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-        <p className="text-lg font-medium text-foreground">No applications found</p>
-        <p className="text-sm text-muted-foreground">Add your first application to get started</p>
+        <p className="text-lg font-medium text-foreground">
+          No applications found
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Add your first application to get started
+        </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -67,19 +82,25 @@ export function ApplicationsTable({ applications, onEdit, onDelete }: Applicatio
               <TableHead className="font-semibold">Applied</TableHead>
               <TableHead className="font-semibold">Phone</TableHead>
               <TableHead className="font-semibold">Interview</TableHead>
-              <TableHead className="hidden font-semibold lg:table-cell">Notes</TableHead>
-              <TableHead className="text-right font-semibold">Actions</TableHead>
+              <TableHead className="hidden font-semibold lg:table-cell">
+                Notes
+              </TableHead>
+              <TableHead className="text-right font-semibold">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {applications.map((app) => {
-              const config = statusConfig[app.statuses] || statusConfig.applied
+              const config = statusConfig[app.statuses] || statusConfig.applied;
               return (
                 <TableRow key={app._id}>
                   <TableCell className="font-medium text-foreground">
                     {app.company_name}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{app.position}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {app.position}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={app.statuses} config={config} />
                   </TableCell>
@@ -128,21 +149,24 @@ export function ApplicationsTable({ applications, onEdit, onDelete }: Applicatio
                     </div>
                   </TableCell>
                 </TableRow>
-              )
+              );
             })}
           </TableBody>
         </Table>
       </div>
     </TooltipProvider>
-  )
+  );
 }
 
 function StatusBadge({
   status,
   config,
 }: {
-  status: ApplicationStatus
-  config: { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  status: ApplicationStatus;
+  config: {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  };
 }) {
   const colorMap: Record<ApplicationStatus, string> = {
     applied: "bg-secondary text-secondary-foreground",
@@ -150,12 +174,11 @@ function StatusBadge({
     interviewing: "bg-primary text-primary-foreground",
     offer: "bg-success text-success-foreground",
     rejected: "bg-destructive/10 text-destructive",
-    withdrawn: "bg-muted text-muted-foreground",
-  }
+  };
 
   return (
     <Badge variant={config.variant} className={colorMap[status]}>
       {config.label}
     </Badge>
-  )
+  );
 }
