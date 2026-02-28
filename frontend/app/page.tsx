@@ -121,25 +121,13 @@ export default function DashboardPage() {
       try {
         if (editingApp) {
           await apiUpdateApplication(editingApp._id, data)
-          mutateHome(
-            (current) => {
-              if (!current) return current
-              return {
-                ...current,
-                applications: current.applications.map((app) =>
-                  app._id === editingApp._id ? { ...app, ...data } : app
-                ),
-              }
-            },
-            { revalidate: false }
-          )
-          mutateEvents()
         } else {
           await apiAddApplication(data)
-          mutateHome()
-          mutateEvents()
         }
+        mutateHome()
+        mutateEvents()
       } catch {
+        toast.error(editingApp ? "Failed to update application" : "Failed to add application")
         throw new Error("submit failed")
       }
     },
