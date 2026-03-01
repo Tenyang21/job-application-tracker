@@ -1,5 +1,5 @@
 import * as dataa from "../models/applicationModel";
-import { UpcomingEvents, UpdateBody} from "../types";
+import { UpcomingEvents, UpdateBody } from "../types";
 import { Request, Response, NextFunction } from "express";
 
 export const Home = async (req: Request, res: Response) => {
@@ -19,7 +19,7 @@ export const Home = async (req: Request, res: Response) => {
     if (replyRate > 0) {
       percentage = Math.trunc((replyRate / totalApplications) * 100);
     }
-    res.json({
+    res.status(200).json({
       stats: {
         totalApplications: totalApplications,
         replyRate: percentage,
@@ -29,6 +29,7 @@ export const Home = async (req: Request, res: Response) => {
     }); //due to frontend design
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Failed to load application" });
   }
 };
 
@@ -37,12 +38,10 @@ export const sortEvents = async (req: Request, res: Response) => {
     const userId = req.userId;
     let events: UpcomingEvents[] = [];
     const applications = await dataa.upcomingEvents(userId!);
+    const now = new Date();
     applications.forEach((a) => {
-      if (
-        a.incoming_phone &&
-        new Date(a.incoming_phone) >= new Date() &&
-        a.statuses != "rejected"
-      ) {
+      if (a.statuses === "rejected") return;
+      if (a.incoming_phone && new Date(a.incoming_phone) >= now) {
         events.push({
           type: "phone",
           company_name: a.company_name,
@@ -50,13 +49,7 @@ export const sortEvents = async (req: Request, res: Response) => {
           application_id: a.application_id,
         });
       }
-    });
-    applications.forEach((a) => {
-      if (
-        a.incoming_interview &&
-        new Date(a.incoming_interview) >= new Date() &&
-        a.statuses != "rejected"
-      ) {
+      if (a.incoming_interview && new Date(a.incoming_interview) >= now) {
         events.push({
           type: "interview",
           company_name: a.company_name,
@@ -65,10 +58,13 @@ export const sortEvents = async (req: Request, res: Response) => {
         });
       }
     });
-    events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    res.json(events);
+    events.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+    res.status(200).json(events);
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Failed to load application" });
   }
 };
 
@@ -94,12 +90,13 @@ export const addApplication = async (req: Request, res: Response) => {
       notes,
       position,
     );
-    res.json({
+    res.status(200).json({
       success: "Application created successfully",
       data: data, //must send it to client since id is needed for other methods
     });
   } catch (error) {
     console.log("Error");
+    res.status(500).json({ error: "Failed to load application" });
   }
 };
 
@@ -127,7 +124,7 @@ export const updateApplication = async (req: Request, res: Response) => {
       notes,
       position,
     );
-    res.json({
+    res.status(200).json({
       success: "Application updated successfully",
     });
   } catch (error) {
@@ -140,10 +137,11 @@ export const deleteApplication = async (req: Request, res: Response) => {
     const id = parseInt(req.params.applicationId as string);
     const userId = req.userId;
     await dataa.deleteData(userId!, id);
-    res.json({
+    res.status(200).json({
       success: "Application deleted successfully",
     });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Failed to load application" });
   }
 };
